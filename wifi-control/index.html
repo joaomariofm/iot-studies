@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WiFi LED Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .button.off {
+            background-color: #f44336;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WiFi LED Control</h1>
+    <button id="ledButton" class="button">Turn LED ON</button>
+    <div id="status">LED Status: Unknown</div>
+
+    <script>
+        const button = document.getElementById('ledButton');
+        const status = document.getElementById('status');
+        let isLedOn = false;
+
+        // Function to update LED state
+        async function toggleLED() {
+            try {
+                const response = await fetch('/led', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        state: !isLedOn
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                isLedOn = data.state;
+                updateUI();
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'Error: Failed to communicate with the device';
+            }
+        }
+
+        // Function to get current LED status
+        async function getLEDStatus() {
+            try {
+                const response = await fetch('/led');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                isLedOn = data.state;
+                updateUI();
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'Error: Failed to get LED status';
+            }
+        }
+
+        // Function to update UI elements
+        function updateUI() {
+            button.textContent = isLedOn ? 'Turn LED OFF' : 'Turn LED ON';
+            button.className = isLedOn ? 'button' : 'button off';
+            status.textContent = `LED Status: ${isLedOn ? 'ON' : 'OFF'}`;
+        }
+
+        // Add click event listener to button
+        button.addEventListener('click', toggleLED);
+
+        // Get initial LED status when page loads
+        getLEDStatus();
+
+        // Periodically update LED status
+        setInterval(getLEDStatus, 5000);
+    </script>
+</body>
+</html>
